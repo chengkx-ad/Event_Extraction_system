@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if batch %}编辑批次{% else %}创建批次{% endif %} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">{% if batch %}编辑批次{% else %}创建批次{% endif %}</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="text-right">
+                        <a href="{% if batch %}{% url 'file_management:batch_detail' project.id batch.id %}{% else %}{% url 'file_management:batch_list' project.id %}{% endif %}" 
+                           class="btn btn-secondary">
+                            取消
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if batch %}保存修改{% else %}创建批次{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

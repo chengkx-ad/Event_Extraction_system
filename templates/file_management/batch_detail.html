@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ batch.name }} - 批次详情 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">批次详情</h3>
+                <div class="btn-group">
+                    <a href="{% url 'file_management:batch_update' project.id batch.id %}" 
+                       class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit"></i> 编辑
+                    </a>
+                    <a href="{% url 'file_management:batch_delete' project.id batch.id %}" 
+                       class="btn btn-sm btn-danger">
+                        <i class="fas fa-trash"></i> 删除
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <h4>{{ batch.name }}</h4>
+                <p class="text-muted">创建时间：{{ batch.created_at|date:"Y-m-d H:i" }}</p>
+                <p>{{ batch.description|linebreaks }}</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">批次文档</h4>
+                <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#addDocumentsModal">
+                    <i class="fas fa-plus"></i> 添加文档
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>标题</th>
+                                <th>状态</th>
+                                <th>标注数</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for document in batch.documents.all %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'file_management:document_detail' project.id document.id %}">
+                                        {{ document.title }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge badge-{{ document.status|yesno:'success,secondary' }}">
+                                        {{ document.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ document.annotations.count }}</td>
+                                <td>
+                                    <form action="{% url 'file_management:batch_remove_document' project.id batch.id document.id %}" 
+                                          method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                onclick="return confirm('确定要从批次中移除此文档吗？')">
+                                            <i class="fas fa-times"></i> 移除
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">暂无文档</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">批次统计</h4>
+            </div>
+            <div class="list-group list-group-flush">
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>文档数量</span>
+                        <span class="badge badge-primary badge-pill">{{ batch.documents.count }}</span>
+                    </div>
+                </div>
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>已标注文档</span>
+                        <span class="badge badge-success badge-pill">
+                            {{ batch.documents.filter(status='completed')|length }}
+                        </span>
+                    </div>
+                </div>
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>待处理文档</span>
+                        <span class="badge badge-secondary badge-pill">
+                            {{ batch.documents.filter(status='pending')|length }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加文档模态框 -->
+<div class="modal fade" id="addDocumentsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加文档到批次</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form action="{% url 'file_management:batch_add_documents' project.id batch.id %}" method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="selectAll">
+                                            <label class="custom-control-label" for="selectAll"></label>
+                                        </div>
+                                    </th>
+                                    <th>标题</th>
+                                    <th>状态</th>
+                                    <th>上传者</th>
+                                    <th>上传时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for document in available_documents %}
+                                <tr>
+                                    <td>
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" 
+                                                   id="document{{ document.id }}" name="documents" 
+                                                   value="{{ document.id }}">
+                                            <label class="custom-control-label" for="document{{ document.id }}"></label>
+                                        </div>
+                                    </td>
+                                    <td>{{ document.title }}</td>
+                                    <td>{{ document.get_status_display }}</td>
+                                    <td>{{ document.uploaded_by.username }}</td>
+                                    <td>{{ document.uploaded_at|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">没有可添加的文档</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">添加所选文档</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'file_management:batch_list' project.id %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> 返回批次列表
+    </a>
+</div>
+
+{% block extra_js %}
+<script>
+document.getElementById('selectAll').addEventListener('change', function() {
+    var checkboxes = document.querySelectorAll('input[name="documents"]');
+    checkboxes.forEach(function(checkbox) {
+        checkbox.checked = this.checked;
+    }, this);
+});
+</script>
+{% endblock %}
+{% endblock %} 

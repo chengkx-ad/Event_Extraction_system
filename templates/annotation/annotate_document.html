@@ -1,0 +1,445 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}标注文档 - {{ document.title }} - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.highlight {
+    background-color: #fff3cd;
+    cursor: pointer;
+}
+.selected-text {
+    background-color: #d4edda;
+}
+.event-highlight {
+    background-color: #cce5ff;
+    cursor: pointer;
+}
+.argument-highlight {
+    background-color: #d1ecf1;
+    cursor: pointer;
+}
+#document-content {
+    white-space: pre-wrap;
+    line-height: 2;
+    padding: 1rem;
+    min-height: 300px;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">文档内容</h3>
+                <div>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addEventModal">
+                        <i class="fas fa-plus"></i> 添加事件
+                    </button>
+                    {% if annotation.status == 'draft' %}
+                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#submitModal">
+                        <i class="fas fa-check"></i> 提交标注
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="document-content">{{ document.content }}</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">已标注事件</h4>
+            </div>
+            <div class="card-body">
+                <div class="list-group" id="event-list">
+                    {% for event in annotation.events.all %}
+                    <div class="list-group-item" data-event-id="{{ event.id }}">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">
+                                <span class="badge badge-primary">{{ event.event_type.name }}</span>
+                                <span class="ml-2">{{ event.text }}</span>
+                            </h5>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        onclick="addArgument('{{ event.id }}')">
+                                    <i class="fas fa-plus"></i> 添加论元
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                        onclick="deleteEvent('{{ event.id }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="list-group">
+                            {% for argument in event.arguments.all %}
+                            <div class="list-group-item list-group-item-action" data-argument-id="{{ argument.id }}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge badge-info">{{ argument.role.name }}</span>
+                                        <span class="ml-2">{{ argument.text }}</span>
+                                    </div>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                onclick="deleteArgument('{{ event.id }}', '{{ argument.id }}')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-3">暂无标注的事件</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">文档信息</h4>
+            </div>
+            <div class="list-group list-group-flush">
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>标题</span>
+                        <span>{{ document.title }}</span>
+                    </div>
+                </div>
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>所属项目</span>
+                        <span>{{ document.project.name }}</span>
+                    </div>
+                </div>
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>状态</span>
+                        <span class="badge badge-{{ annotation.status|yesno:'success,secondary' }}">
+                            {{ annotation.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>事件数量</span>
+                        <span class="badge badge-primary badge-pill">{{ annotation.events.count }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">操作说明</h4>
+            </div>
+            <div class="card-body">
+                <ol class="mb-0">
+                    <li>选中文本后点击"添加事件"按钮来标注事件</li>
+                    <li>在事件下方点击"添加论元"来标注论元</li>
+                    <li>可以点击已标注的文本来查看和编辑</li>
+                    <li>标注完成后点击"提交标注"按钮</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加事件模态框 -->
+<div class="modal fade" id="addEventModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加事件</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form id="addEventForm" method="post" 
+                  action="{% url 'annotation:add_event' document.id %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    {{ event_form|crispy }}
+                    <input type="hidden" name="text" id="selectedText">
+                    <input type="hidden" name="start_offset" id="startOffset">
+                    <input type="hidden" name="end_offset" id="endOffset">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 添加论元模态框 -->
+<div class="modal fade" id="addArgumentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加论元</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form id="addArgumentForm" method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div id="argumentForm"></div>
+                    <input type="hidden" name="text" id="argumentSelectedText">
+                    <input type="hidden" name="start_offset" id="argumentStartOffset">
+                    <input type="hidden" name="end_offset" id="argumentEndOffset">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 提交确认模态框 -->
+<div class="modal fade" id="submitModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">提交标注</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>确定要提交标注吗？提交后将不能再修改。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <form method="post" action="{% url 'annotation:submit_annotation' document.id %}"
+                      class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">确认提交</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 初始化数据
+window.events = JSON.parse('{{ events_json|escapejs }}');
+let currentSelection = null;
+let currentEventId = null;
+
+// 文本选择处理
+$('#document-content').on('mouseup', function() {
+    const selection = window.getSelection();
+    if (selection.toString().trim()) {
+        currentSelection = {
+            text: selection.toString().trim(),
+            startOffset: selection.anchorOffset,
+            endOffset: selection.focusOffset
+        };
+    }
+});
+
+// 添加论元
+function addArgument(eventId) {
+    if (!currentSelection) {
+        alert('请先选择文本！');
+        return;
+    }
+    
+    currentEventId = eventId;
+    
+    // 获取论元表单
+    $.get(`/annotation/document/{{ document.id }}/events/${eventId}/arguments/form/`, function(response) {
+        $('#argumentForm').html(response);
+        $('#argumentSelectedText').val(currentSelection.text);
+        $('#argumentStartOffset').val(currentSelection.startOffset);
+        $('#argumentEndOffset').val(currentSelection.endOffset);
+        $('#addArgumentForm').attr('action', `/annotation/document/{{ document.id }}/events/${eventId}/arguments/add/`);
+        $('#addArgumentModal').modal('show');
+    });
+}
+
+// 删除论元
+function deleteArgument(eventId, argumentId) {
+    if (confirm('确定要删除此论元吗？')) {
+        $.ajax({
+            url: `/annotation/document/{{ document.id }}/events/${eventId}/arguments/${argumentId}/delete/`,
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    // 从events数组中移除论元
+                    const eventIndex = window.events.findIndex(e => e.id === parseInt(eventId));
+                    if (eventIndex !== -1) {
+                        const argumentIndex = window.events[eventIndex].arguments.findIndex(a => a.id === parseInt(argumentId));
+                        if (argumentIndex !== -1) {
+                            window.events[eventIndex].arguments.splice(argumentIndex, 1);
+                        }
+                    }
+                    
+                    // 从DOM中移除论元元素
+                    const argumentElement = document.querySelector(`[data-argument-id="${argumentId}"]`);
+                    if (argumentElement) {
+                        argumentElement.remove();
+                    }
+                    
+                    // 更新高亮显示
+                    updateHighlights();
+                } else {
+                    alert('删除论元失败：' + (response.message || '未知错误'));
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('删除论元失败，请重试');
+                console.error('Error:', error);
+            }
+        });
+    }
+}
+
+// 更新文本高亮显示
+function updateHighlights() {
+    const content = document.getElementById('document-content');
+    if (!content) return;
+
+    let text = content.textContent || '';
+    
+    // 遍历所有事件和论元，添加高亮
+    window.events.forEach(event => {
+        // 高亮事件文本
+        if (event.text) {
+            const eventRegex = new RegExp(escapeRegExp(event.text), 'g');
+            text = text.replace(eventRegex, match => 
+                `<span class="event-highlight" data-event-id="${event.id}">${match}</span>`
+            );
+        }
+        
+        // 高亮论元文本
+        if (event.arguments) {
+            event.arguments.forEach(arg => {
+                if (arg.text) {
+                    const argRegex = new RegExp(escapeRegExp(arg.text), 'g');
+                    text = text.replace(argRegex, match => 
+                        `<span class="argument-highlight" data-argument-id="${arg.id}" data-event-id="${event.id}">${match}</span>`
+                    );
+                }
+            });
+        }
+    });
+    
+    // 更新DOM
+    content.innerHTML = text;
+}
+
+// 辅助函数：转义正则表达式特殊字符
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// 初始化
+$(document).ready(function() {
+    // 初始化Bootstrap模态框
+    $('#addEventModal, #addArgumentModal').modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+    });
+    
+    // 初始化高亮
+    updateHighlights();
+});
+
+// 添加论元表单提交处理
+$('#addArgumentForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    $.ajax({
+        url: $(this).attr('action'),
+        type: 'POST',
+        data: $(this).serialize(),
+        success: function(response) {
+            if (response.status === 'success') {
+                // 更新events数组中的数据
+                const eventIndex = window.events.findIndex(e => e.id === parseInt(currentEventId));
+                if (eventIndex !== -1) {
+                    if (!window.events[eventIndex].arguments) {
+                        window.events[eventIndex].arguments = [];
+                    }
+                    window.events[eventIndex].arguments.push({
+                        id: response.argument.id,
+                        text: response.argument.text,
+                        role: response.argument.role
+                    });
+                }
+
+                // 创建新的论元元素
+                const argumentHtml = `
+                    <div class="list-group-item list-group-item-action" data-argument-id="${response.argument.id}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge badge-info">${response.argument.role}</span>
+                                <span class="ml-2">${response.argument.text}</span>
+                            </div>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                        onclick="deleteArgument('${currentEventId}', '${response.argument.id}')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // 找到当前事件的论元列表并添加新论元
+                const eventElement = document.querySelector(`[data-event-id="${currentEventId}"]`);
+                if (eventElement) {
+                    const argumentsList = eventElement.querySelector('.list-group');
+                    if (argumentsList) {
+                        // 将新论元添加到列表中
+                        argumentsList.insertAdjacentHTML('beforeend', argumentHtml);
+                        
+                        // 更新高亮显示
+                        updateHighlights();
+                    }
+                }
+                
+                // 清除选择并关闭模态框
+                currentSelection = null;
+                $('#addArgumentModal').modal('hide');
+                
+                // 清空表单
+                $('#argumentForm').empty();
+                $('#argumentSelectedText').val('');
+                $('#argumentStartOffset').val('');
+                $('#argumentEndOffset').val('');
+            } else {
+                alert('添加论元失败：' + (response.errors ? JSON.stringify(response.errors) : '未知错误'));
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('添加论元失败，请重试');
+            console.error('Error:', error);
+        }
+    });
+});
+</script>
+{% endblock %} 

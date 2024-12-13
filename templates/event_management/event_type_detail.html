@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ event_type.name }} - 事件类型详情 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>{{ event_type.name }}</h2>
+            <p class="text-muted">{{ event_type.description }}</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary" id="addArgumentBtn">
+                    <i class="fas fa-plus"></i> 添加论元角色
+                </button>
+                <a href="{% url 'event_management:event_type_update' project.id event_type.id %}" class="btn btn-secondary">
+                    <i class="fas fa-edit"></i> 编辑
+                </a>
+                <a href="{% url 'event_management:event_type_delete' project.id event_type.id %}" 
+                   class="btn btn-danger"
+                   onclick="return confirm('确定要删除此事件类型吗？')">
+                    <i class="fas fa-trash"></i> 删除
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">论元角色列表</h5>
+        </div>
+        <div class="card-body">
+            {% if event_type.argument_roles.exists %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>描述</th>
+                            <th>是否必需</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for role in event_type.argument_roles.all %}
+                        <tr>
+                            <td>{{ role.name }}</td>
+                            <td>{{ role.description }}</td>
+                            <td>
+                                {% if role.is_required %}
+                                <span class="badge badge-primary">必需</span>
+                                {% else %}
+                                <span class="badge badge-secondary">可选</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                            onclick="editRole('{{ role.id }}', '{{ role.name }}', '{{ role.description }}', '{{ role.is_required|yesno:'true,false' }}')"
+                                            >
+                                        <i class="fas fa-edit"></i> 编辑
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            onclick="deleteRole('{{ role.id }}')"
+                                            >
+                                        <i class="fas fa-trash"></i> 删除
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-center text-muted mb-0">暂无论元角色，请点击上方按钮添加</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 添加论元角色模态框 -->
+<div class="modal" id="addArgumentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加论元角色</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form id="argumentRoleForm">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="name">名称</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">描述</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="is_required" name="is_required">
+                            <label class="custom-control-label" for="is_required">是否必需</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    console.log('Document ready');  // 调试信息
+
+    // 点击添加按钮时显示模态框
+    $('#addArgumentBtn').click(function() {
+        console.log('Add button clicked');  // 调试信息
+        $('#addArgumentModal').modal('show');
+    });
+
+    // 添加论元角色的表单提交
+    $('#argumentRoleForm').on('submit', function(e) {
+        console.log('Form submitted');  // 调试信息
+        e.preventDefault();
+        
+        $.ajax({
+            url: "{% url 'event_management:argument_role_create' project.id event_type.id %}",
+            type: 'POST',
+            data: $(this).serialize(),
+            success: function(response) {
+                console.log('Response received:', response);  // 调试信息
+                if (response.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('添加失败：' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('Error:', error);  // 调试信息
+                alert('添加失败，请重试');
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if document %}编辑文档{% else %}上传文档{% endif %} - {{ project.name }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        {% if document %}
+                        <i class="fas fa-edit"></i> 编辑文档
+                        {% else %}
+                        <i class="fas fa-upload"></i> 上传文档
+                        {% endif %}
+                    </h4>
+                    <p class="text-muted mb-0">项目：{{ project.name }}</p>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="form-group text-right">
+                            <a href="{% url 'file_management:document_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> 取消
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if document %}
+                                <i class="fas fa-save"></i> 保存修改
+                                {% else %}
+                                <i class="fas fa-upload"></i> 上传文档
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

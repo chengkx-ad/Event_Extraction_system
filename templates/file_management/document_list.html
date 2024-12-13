@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}文档管理 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>文档管理</h2>
+        </div>
+        {% if projects %}
+        <div class="col-md-4 text-right">
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="uploadDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-upload"></i> 上传文档
+                </button>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="uploadDropdown">
+                    {% for project in projects %}
+                    <a class="dropdown-item" href="{% url 'file_management:document_upload' project.id %}">
+                        上传到：{{ project.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if projects %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">项目筛选</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary active" onclick="filterByProject('')">全部</button>
+                        {% for project in projects %}
+                        <button class="btn btn-outline-primary" onclick="filterByProject('{{ project.id }}')">
+                            {{ project.name }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">文档列表</h5>
+                </div>
+                <div class="card-body">
+                    {% if documents %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>标题</th>
+                                    <th>所属项目</th>
+                                    <th>状态</th>
+                                    <th>上传时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in documents %}
+                                <tr data-project="{{ doc.project.id }}">
+                                    <td>{{ doc.title }}</td>
+                                    <td>{{ doc.project.name }}</td>
+                                    <td>{{ doc.get_status_display }}</td>
+                                    <td>{{ doc.uploaded_at|date:"Y-m-d H:i" }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'file_management:document_detail' doc.project.id doc.id %}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> 查看
+                                            </a>
+                                            {% if user == doc.project.created_by %}
+                                            <a href="{% url 'file_management:document_update' doc.project.id doc.id %}" 
+                                               class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit"></i> 编辑
+                                            </a>
+                                            <a href="{% url 'file_management:document_delete' doc.project.id doc.id %}" 
+                                               class="btn btn-sm btn-outline-danger"
+                                               onclick="return confirm('确定要删除此文档吗？')">
+                                                <i class="fas fa-trash"></i> 删除
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted mb-0">暂无文档</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function filterByProject(projectId) {
+    // 移除所有按钮的active类
+    $('.btn-group .btn').removeClass('active');
+    
+    if (projectId) {
+        // 显示选中项目的文档
+        $('tr[data-project]').hide();
+        $('tr[data-project="' + projectId + '"]').show();
+        // 激活对应��钮
+        $('.btn-group .btn').each(function() {
+            if ($(this).text().trim() === projectId) {
+                $(this).addClass('active');
+            }
+        });
+    } else {
+        // 显示所有文档
+        $('tr[data-project]').show();
+        $('.btn-group .btn:first').addClass('active');
+    }
+}
+
+// 初始化时显示所有文档
+$(document).ready(function() {
+    $('.btn-group .btn:first').addClass('active');
+});
+</script>
+{% endblock %}
+
+{% endblock %} 

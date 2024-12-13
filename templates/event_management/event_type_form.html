@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if event_type %}编辑事件类型{% else %}创建事件类型{% endif %} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">{% if event_type %}编辑事件类型{% else %}创建事件类型{% endif %}</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="text-right">
+                        <a href="{% url 'event_management:event_type_list' project.id %}" class="btn btn-secondary">
+                            取消
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if event_type %}保存修改{% else %}创建事件类型{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

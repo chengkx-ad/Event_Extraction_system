@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}事件论元标注系统{% endblock %}</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/4.5.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/nprogress/0.2.0/nprogress.min.css" rel="stylesheet">
+    <style>
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+        .nav-item.active {
+            font-weight: bold;
+        }
+        .card {
+            box-shadow: 0 1px 3px rgba(0,0,0,.1);
+        }
+        .btn-group .btn {
+            margin-right: 5px;
+        }
+        .table td, .table th {
+            vertical-align: middle;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-project-diagram"></i> 事件论元标注系统
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item {% if request.resolver_match.app_name == 'project_management' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'project_management:project_list' %}">
+                            <i class="fas fa-folder"></i> 项目管理
+                        </a>
+                    </li>
+                    <li class="nav-item {% if request.resolver_match.app_name == 'file_management' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'file_management:document_list' %}">
+                            <i class="fas fa-file-alt"></i> 文档管理
+                        </a>
+                    </li>
+                    <li class="nav-item {% if request.resolver_match.app_name == 'annotation' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'annotation:task_list' %}">
+                            <i class="fas fa-tasks"></i> 标注任务
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
+                            <i class="fas fa-user-circle"></i> {{ user.username }}
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <a class="dropdown-item" href="{% url 'project_management:change_password' %}">
+                                <i class="fas fa-key"></i> 修改密码
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{% url 'logout' %}">
+                                <i class="fas fa-sign-out-alt"></i> 退出
+                            </a>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">
+                            <i class="fas fa-sign-in-alt"></i> 登录
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.1/umd/popper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.3/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.js"></script>
+    <script>
+        // 页面加载进度条
+        NProgress.configure({ showSpinner: false });
+        NProgress.start();
+        $(window).on('load', function() {
+            NProgress.done();
+        });
+
+        // AJAX请求进度条
+        $(document).ajaxStart(function() {
+            NProgress.start();
+        });
+        $(document).ajaxStop(function() {
+            NProgress.done();
+        });
+
+        // 确认对话框
+        $('[data-confirm]').on('click', function(e) {
+            if (!confirm($(this).data('confirm'))) {
+                e.preventDefault();
+            }
+        });
+
+        // 表单提交按钮状态
+        $('form').on('submit', function() {
+            $(this).find('button[type="submit"]').prop('disabled', true);
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

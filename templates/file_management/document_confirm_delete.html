@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}删除文档 - {{ document.title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">确认删除文档</h3>
+            </div>
+            <div class="card-body">
+                <p class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    您确定要删除文档 <strong>{{ document.title }}</strong> 吗？
+                    此操作将同时删除所有相关的标注数据，且不可恢复！
+                </p>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">文档信息</h5>
+                        <ul class="list-unstyled mb-0">
+                            <li><strong>上传者：</strong>{{ document.uploaded_by.username }}</li>
+                            <li><strong>上传时间：</strong>{{ document.uploaded_at|date:"Y-m-d H:i" }}</li>
+                            <li><strong>标注数量：</strong>{{ document.annotations.count }}</li>
+                            <li><strong>所属批次：</strong>
+                                {% if document.batches.exists %}
+                                {% for batch in document.batches.all %}
+                                {{ batch.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                                {% else %}
+                                无
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="text-right">
+                        <a href="{% url 'file_management:document_detail' project.id document.id %}" 
+                           class="btn btn-secondary">
+                            取消
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> 确认删除
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

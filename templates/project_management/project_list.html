@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}项目列表 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>项目列表</h2>
+    <a href="{% url 'project_management:project_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> 创建新项目
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <h3>我创建的项目</h3>
+        <div class="list-group mb-4">
+            {% for project in created_projects %}
+            <a href="{% url 'project_management:project_detail' project.pk %}" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">{{ project.name }}</h5>
+                    <small>{{ project.created_at|date:"Y-m-d H:i" }}</small>
+                </div>
+                <p class="mb-1">{{ project.description|truncatechars:200 }}</p>
+                <small>成员数: {{ project.members.count }}</small>
+            </a>
+            {% empty %}
+            <div class="list-group-item">
+                <p class="mb-0 text-muted">暂无创建的项目</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <h3>我参与的项目</h3>
+        <div class="list-group">
+            {% for project in user_projects %}
+            {% if project.created_by != user %}
+            <a href="{% url 'project_management:project_detail' project.pk %}" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">{{ project.name }}</h5>
+                    <small>{{ project.created_at|date:"Y-m-d H:i" }}</small>
+                </div>
+                <p class="mb-1">{{ project.description|truncatechars:200 }}</p>
+                <small>创建者: {{ project.created_by.username }}</small>
+            </a>
+            {% endif %}
+            {% empty %}
+            <div class="list-group-item">
+                <p class="mb-0 text-muted">暂无参与的项目</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

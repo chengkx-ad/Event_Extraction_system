@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}标注任务列表 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>标注任务列表</h2>
+    <div>
+        <a href="{% url 'annotation:completed_task_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-check"></i> 已完成任务
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>文档标题</th>
+                        <th>所属项目</th>
+                        <th>状态</th>
+                        <th>分配时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for document in documents %}
+                    <tr>
+                        <td>{{ document.title }}</td>
+                        <td>{{ document.project.name }}</td>
+                        <td>
+                            {% if document.status == 'pending' %}
+                            <span class="badge badge-secondary">待处理</span>
+                            {% elif document.status == 'processing' %}
+                            <span class="badge badge-primary">处理中</span>
+                            {% elif document.status == 'completed' %}
+                            <span class="badge badge-success">已完成</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ document.uploaded_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <a href="{% url 'annotation:annotate_document' document.id %}" 
+                               class="btn btn-sm btn-primary">
+                                <i class="fas fa-edit"></i> 标注
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">暂无待处理的标注任务</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %} 

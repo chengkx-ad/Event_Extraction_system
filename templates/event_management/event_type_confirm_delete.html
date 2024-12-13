@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}删除事件类型 - {{ event_type.name }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">确认删除事件类型</h3>
+            </div>
+            <div class="card-body">
+                <p class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    您确定要删除事件类型 <strong>{{ event_type.name }}</strong> 吗？
+                    此操作将同时删除所有相关的论元角色和标注数据，且不可恢复！
+                </p>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">事件类型信息</h5>
+                        <p class="card-text">{{ event_type.description }}</p>
+                        <ul class="list-unstyled mb-0">
+                            <li><strong>论元角色数量：</strong>{{ event_type.argument_roles.count }}</li>
+                            <li><strong>标注使用次数：</strong>{{ event_type.eventannotation_set.count }}</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="text-right">
+                        <a href="{% url 'event_management:event_type_detail' project.id event_type.id %}" 
+                           class="btn btn-secondary">
+                            取消
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> 确认删除
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
